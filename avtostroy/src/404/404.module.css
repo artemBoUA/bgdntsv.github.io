@@ -1,0 +1,13 @@
+.title{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: xxx-large;
+}
+@media (max-width: 600px) {
+    .page{
+        padding: 0 1rem;
+    }
+}
