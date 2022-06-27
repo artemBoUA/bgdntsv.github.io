@@ -13,7 +13,7 @@ export const firebaseConfig = {
 export const firebaseApp = initializeApp(firebaseConfig)
 export const appCheck = () => {
     return initializeAppCheck(firebaseApp, {
-        provider: new ReCaptchaV3Provider('6LdPDIUgAAAAACKm4Zkaz_0Z8BQdiEyXiPMw7EKQ'),
+        provider: new ReCaptchaV3Provider('6Lcmmo8gAAAAAJx5Q3qQvRMLaf5x5pV41PXEo1Mm'),
         isTokenAutoRefreshEnabled: true
     })
 }
