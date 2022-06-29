@@ -13,7 +13,7 @@ import {
     Input,
     InputAdornment,
     InputLabel,
-    TextField
+    TextField, Typography
 } from '@mui/material'
 import {Visibility, VisibilityOff, Google} from '@mui/icons-material'
 import {useDispatch, useSelector} from 'react-redux'
@@ -22,10 +22,12 @@ import {actionCreators} from '../redux/actionCreators.js'
 import {useNavigate} from 'react-router-dom'
 import {firebaseConfig} from '../firebaseHelper'
 import CloseIcon from '@mui/icons-material/Close'
-
+import {translation} from '../localization'
+import {appCheck} from '../firebaseHelper'
 const Login = () => {
-    const {user} = useSelector(state => state.user)
     const navigate = useNavigate()
+    const {user} = useSelector(state => state.user)
+    const {language} = useSelector(state => state.language)
     const dispatch = useDispatch()
     const {setUserActionCreator} = bindActionCreators(actionCreators, dispatch)
     const [showPassword, setShowPassword] = useState(false)
@@ -61,9 +63,9 @@ const Login = () => {
         onSubmit: async (values, {setSubmitting}) => {
             let userCredentials
             try {
+                appCheck()
                 userCredentials = await signInWithEmailAndPassword(auth, values.email, values.password)
                 setUserActionCreator(userCredentials.user)
-                window.sessionStorage.setItem('_user_Avtostroy_report_project', JSON.stringify(userCredentials.user))
             } catch (error) {
                 showError(error.message)
             } finally {
@@ -73,18 +75,20 @@ const Login = () => {
     })
 
     const signInGoogle = () => {
+        appCheck()
         signInWithPopup(auth, provider)
             .then((result) => {
                 setUserActionCreator(result.user)
-                window.sessionStorage.setItem('_user_Avtostroy_report_project', JSON.stringify(result.user))
             }).catch((error) => {
-                showError(error.message)
+            showError(error.message)
         })
     }
 
     const showError = (error) => {
         setError(error)
-        setTimeout(()=>{setError('')}, 3000)
+        setTimeout(() => {
+            setError('')
+        }, 3000)
     }
 
     const handleShowPassword = (e) => {
@@ -93,7 +97,7 @@ const Login = () => {
     }
 
     return <div className={styles.page}>
-        <Box sx={{ width: '100%' }}>
+        <Box sx={{width: '100%'}}>
             <Collapse in={!!error}>
                 <Alert
                     severity={'error'}
@@ -102,7 +106,7 @@ const Login = () => {
                             aria-label="close"
                             color="inherit"
                             size="small"
-                            onClick={()=>setError('')}>
+                            onClick={() => setError('')}>
                             <CloseIcon fontSize="inherit"/>
                         </IconButton>
                     }
@@ -111,7 +115,7 @@ const Login = () => {
                 </Alert>
             </Collapse>
         </Box>
-        <h1>Please login!</h1>
+        <Typography variant="h4" component="h1">{translation('PLEASE_LOGIN', language)}!</Typography>
         <form onSubmit={formik.handleSubmit} className={styles.form}>
             <FormControl sx={{m: 1, width: '30ch'}} variant="standard">
                 <TextField
@@ -127,7 +131,7 @@ const Login = () => {
                 />
             </FormControl>
             <FormControl sx={{m: 1, width: '30ch'}} variant="standard">
-                <InputLabel htmlFor="standard-adornment-password">Password</InputLabel>
+                <InputLabel htmlFor="standard-adornment-password">{translation('PASSWORD', language)}</InputLabel>
                 <Input
                     id="standard-adornment-password"
                     name="password"
@@ -149,8 +153,9 @@ const Login = () => {
                 />
             </FormControl>
             <div className={styles.buttons}>
-                <Button color="primary" variant="contained" type="submit">Submit</Button>
-                <Button onClick={signInGoogle} startIcon={<Google sx={{height:'25px'}}/>}>Sign in with Google</Button>
+                <Button color="primary" variant="contained" type="submit">{translation('SUBMIT', language)}</Button>
+                <Button onClick={signInGoogle} startIcon={<Google
+                    sx={{height: '25px'}}/>}>{translation('SIGN_IN_WITH_GOOGLE', language)}</Button>
             </div>
         </form>
     </div>

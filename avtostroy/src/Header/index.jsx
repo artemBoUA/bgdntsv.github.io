@@ -1,15 +1,18 @@
+import {
+    Select,
+    Button,
+    Avatar,
+    Tooltip,
+    Container,
+    MenuItem,
+    Menu,
+    Typography,
+    IconButton,
+    Toolbar,
+    Box
+} from '@mui/material'
 import AppBar from '@mui/material/AppBar'
-import Box from '@mui/material/Box'
-import Toolbar from '@mui/material/Toolbar'
-import IconButton from '@mui/material/IconButton'
-import Typography from '@mui/material/Typography'
-import Menu from '@mui/material/Menu'
 import MenuIcon from '@mui/icons-material/Menu'
-import Container from '@mui/material/Container'
-import Avatar from '@mui/material/Avatar'
-import Button from '@mui/material/Button'
-import Tooltip from '@mui/material/Tooltip'
-import MenuItem from '@mui/material/MenuItem'
 import {initializeApp} from 'firebase/app'
 import {getAuth, signOut} from 'firebase/auth'
 import {useState} from 'react'
@@ -19,14 +22,21 @@ import logo from '../rdsLogo.png'
 import {bindActionCreators} from 'redux'
 import {actionCreators} from '../redux/actionCreators.js'
 import {firebaseConfig} from '../firebaseHelper'
+import TranslateIcon from '@mui/icons-material/Translate'
+import {translation} from '../localization'
 
 export const Header = () => {
     const [anchorElNav, setAnchorElNav] = useState(null)
     const [anchorElUser, setAnchorElUser] = useState(null)
     const navigate = useNavigate()
     const {user} = useSelector(state => state.user)
+    const {language} = useSelector(state => state.language)
     const dispatch = useDispatch()
-    const {deleteUserActionCreator} = bindActionCreators(actionCreators, dispatch)
+    const {deleteUserActionCreator, setLanguageActionCreator} = bindActionCreators(actionCreators, dispatch)
+
+    const handleSetLanguage = ({target}) => {
+        setLanguageActionCreator(target.value)
+    }
 
     const handleOpenNavMenu = (event) => {
         setAnchorElNav(event.currentTarget)
@@ -50,7 +60,7 @@ export const Header = () => {
         await deleteUserActionCreator()
         navigate('/login', {replace: true})
         handleCloseUserMenu()
-        window.sessionStorage.removeItem('_user_Avtostroy_report_project')
+        // window.sessionStorage.removeItem('_user_Avtostroy_report_project')
     }
 
     return (
@@ -87,13 +97,13 @@ export const Header = () => {
                                 navigate('/report')
                                 setAnchorElNav(null)
                             }}>
-                                <Typography textAlign="center">Report</Typography>
+                                <Typography textAlign="center">{translation('REPORT', language)}</Typography>
                             </MenuItem>
                             <MenuItem onClick={() => {
                                 navigate('/your-reports')
                                 setAnchorElNav(null)
                             }}>
-                                <Typography textAlign="center">Your reports</Typography>
+                                <Typography textAlign="center">{translation('YOUR_REPORTS', language)}</Typography>
                             </MenuItem>
 
                         </Menu>
@@ -108,24 +118,32 @@ export const Header = () => {
                             mr: 2, display: {xs: 'flex', md: 'none'}, flexGrow: 1, fontFamily: 'monospace',
                             fontWeight: 700, letterSpacing: '.3rem', color: 'inherit', textDecoration: 'none'
                         }}>
-                        <img src={logo} height='25px' alt="RDS"/>
+                        <img src={logo} height="25px" alt="RDS"/>
                     </Typography>
                     <Box sx={{flexGrow: 1, display: {xs: 'none', md: 'flex'}}}>
-                            <Button onClick={()=>navigate('/report')}
-                                    sx={{my: 2, color: 'white', display: 'block'}}>
-                                Report</Button>
-                            <Button onClick={()=>navigate('/your-reports')}
-                                    sx={{my: 2, color: 'white', display: 'block'}}>
-                                Your reports</Button>
+                        <Button onClick={() => navigate('/report')}
+                                sx={{my: 2, color: 'white', display: 'block'}}>
+                            {translation('REPORT', language)}</Button>
+                        <Button onClick={() => navigate('/your-reports')}
+                                sx={{my: 2, color: 'white', display: 'block'}}>
+                            {translation('YOUR_REPORTS', language)}</Button>
 
                     </Box>
-
+                    <Select
+                        variant="standard"
+                        value={language}
+                        IconComponent={TranslateIcon}
+                        onChange={handleSetLanguage}
+                        inputProps={{'aria-label': 'Without label'}}>
+                        <MenuItem value={'ua'}>UA</MenuItem>
+                        <MenuItem value={'en'}>EN</MenuItem>
+                    </Select>
                     <Box sx={{flexGrow: 0}}>
-                        <Tooltip title={user ? 'Open settings' : ''}>
+                        <Tooltip title={user ? translation('OPEN_SETTINGS', language) : ''}>
                             <IconButton onClick={(e) => user ? handleOpenUserMenu(e) : navigate('/login')}
                                         sx={{fontSize: '14px', borderRadius: '1rem', padding: '0 0.5rem'}}
                                         color="inherit">
-                                {user ? user?.displayName.split(' ')[0] || user?.email.split('@')[0] : 'sign in'}
+                                {user ? user?.displayName.split(' ')[0] || user?.email.split('@')[0] : translation('SIGN_IN', language)}
                                 <Avatar sx={{marginLeft: '8px'}} alt={user?.displayName || user?.email}
                                         src={user?.photoURL} referrerPolicy="no-referrer"/>
                             </IconButton>
@@ -139,11 +157,9 @@ export const Header = () => {
                             transformOrigin={{vertical: 'top', horizontal: 'right'}}
                             open={Boolean(anchorElUser)}
                             onClose={handleCloseUserMenu}>
-
                             <MenuItem onClick={logOut}>
-                                <Typography textAlign="center">Logout</Typography>
+                                <Typography textAlign="center">{translation('LOGOUT', language)}</Typography>
                             </MenuItem>
-
                         </Menu>
                     </Box>
                 </Toolbar>

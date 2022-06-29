@@ -7,12 +7,15 @@ import Typography from '@mui/material/Typography'
 import ExploreOutlinedIcon from '@mui/icons-material/ExploreOutlined'
 import {yellow} from '@mui/material/colors'
 import {appCheck} from '../firebaseHelper'
+import {useSelector} from 'react-redux'
+import {translation} from '../localization'
 
 const axios = require('axios')
 
 
 export const Map = ({setIsMessageOpen, setMessageText, setMessageType, markers, setMarkers}) => {
     const [selected, setSelected] = useState(null)
+    const {language} = useSelector(state => state.language)
 
     const options = {
         disableDefaultUI: true,
@@ -94,7 +97,7 @@ export const Map = ({setIsMessageOpen, setMessageText, setMessageType, markers, 
                    onClick={handleMapClick}
                    onLoad={onMapLoad}>
             {markers[0] && <Button sx={{m: '.5rem'}} variant="contained" size="small"
-                                   onClick={deleteMarkers}>Delete marks</Button>}
+                                   onClick={deleteMarkers}>{translation('DELETE_MARKS', language)}</Button>}
             {markers.map((marker, i) => <Marker key={i}
                                                 position={marker}
                                                 onClick={() => setSelected(marker)}
@@ -107,10 +110,10 @@ export const Map = ({setIsMessageOpen, setMessageText, setMessageType, markers, 
             {selected && <InfoWindow position={{lat: selected.lat, lng: selected.lng}}
                                      onCloseClick={() => setSelected(null)}>
                 <div>
-                    <Typography variant="h7" component="h4">Do you want to delete this mark?</Typography>
+                    <Typography variant="h7" component="h4">{translation('DELETE_THIS_MARK', language)}?</Typography>
                     <Button
-                        onClick={deleteMark} sx={{margin: '.2rem 0 .2rem auto', display: 'flex'}}>
-                        Delete</Button>
+                        onClick={deleteMark} sx={{margin: '.2rem 0 .2rem auto', display: 'flex'}} size='small'>
+                        {translation('DELETE', language)}</Button>
                 </div>
             </InfoWindow>}
             <Locate panTo={panTo}/>
