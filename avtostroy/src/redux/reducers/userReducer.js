@@ -1,7 +1,7 @@
 import {DELETE_USER, SET_USER} from '../actionTypeConstants'
 
-const reducer = (state={}, action) => {
-    switch (action.type){
+const reducer = (state = {}, action) => {
+    switch (action.type) {
         case SET_USER:
             return {...state, user: action.payload}
         case DELETE_USER:
@@ -10,5 +10,4 @@ const reducer = (state={}, action) => {
             return state
     }
 }
-
 export default reducer

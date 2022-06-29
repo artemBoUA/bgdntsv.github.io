@@ -1,0 +1,1 @@
+export const HashArray = ['23fa21893d19692b5ac6b78a6e6291e34f7f9bf1', '7d6621981452ea654e204f4144ec9e1877d01d5b']

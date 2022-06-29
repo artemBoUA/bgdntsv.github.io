@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState, useCallback} from 'react'
+import React, {useEffect, useState} from 'react'
 import {child, get, getDatabase, ref} from 'firebase/database'
 import {appCheck} from '../firebaseHelper'
 import {
@@ -7,152 +7,79 @@ import {
     AccordionSummary,
     Box,
     Button,
-    CircularProgress, Grid, ImageList, ImageListItem,
+    CircularProgress,
     Typography
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import {lightBlue, blue} from '@mui/material/colors'
+import {lightBlue, blue, indigo} from '@mui/material/colors'
 import FolderIcon from '@mui/icons-material/Folder'
 import ReplayIcon from '@mui/icons-material/Replay'
-import {GoogleMap, Marker} from '@react-google-maps/api'
-import mapStyles from '../googleMaps/mapsStyles'
-import * as firebaseStorage from 'firebase/storage'
+import {translation} from '../localization'
+import {useSelector} from 'react-redux'
+import {AccordionReport} from './AccordionReport'
+import hash from 'object-hash'
+import {HashArray} from '../hashes'
 
 export const YourReports = ({user}) => {
     const [isLoading, setIsLoading] = useState(false)
-    const [images, setImages] = useState([])
     const [snapshot, setSnapshot] = useState()
-    const mapRef = useRef()
-    const options = {
-        disableDefaultUI: true,
-        styles: mapStyles,
-        zoomControl: true,
-        fullscreenControl: true
-    }
-    const onMapLoad = useCallback(
-        (map) => {
-            mapRef.current = map
-        },
-        []
-    )
-    const MapComponent = ({locations}) => {
-        return <GoogleMap mapContainerStyle={{width: '100%', minHeight: '100%', height: '400px'}}
-                          zoom={14}
-                          options={options}
-                          center={locations[0]}
-                          onLoad={onMapLoad}>
-            {locations.map((marker, i) => <Marker key={i}
-                                                  position={{lat: marker.lat, lng: marker.lng}}
-                                                  icon={{
-                                                      url: '/markerImg.svg',
-                                                      scaledSize: new window.google.maps.Size(25, 25),
-                                                      origin: new window.google.maps.Point(0, 0),
-                                                      anchor: new window.google.maps.Point(15, 15)
-                                                  }}
-            />)}
-        </GoogleMap>
-    }
-    const getImageURLs = async (dateRep, report) => {
-        let imageURLs = []
-        const reportInt = parseInt(report)
-        if(!images[reportInt]) {
-            const storage = firebaseStorage.getStorage()
-            const imageListRef = firebaseStorage.ref(storage, `images/${user.uid}/${dateRep}/${report}`)
-            const res = await firebaseStorage.listAll(imageListRef)
-            for (const item of res.items) {
-                const url = await firebaseStorage.getDownloadURL(item)
-                imageURLs = [...imageURLs, url]
-            }
-            setImages(prev=>{return{...prev, [reportInt]: imageURLs}})
-        }
-    }
+    const {language} = useSelector(state => state.language)
+    const isNotUser = HashArray.includes(hash(user.uid))
+
     const getDataFirebase = async () => {
         setIsLoading(true)
         const dbRef = ref(getDatabase())
         await appCheck()
-        const resSnapshot = await get(child(dbRef, 'reports/' + user.uid))
-        if (resSnapshot?.exists()) {
-            const responseData = resSnapshot.val()
-            for (const key in responseData) {
-                for (const keyKey in responseData[key]) {
-                    await getImageURLs(key, keyKey)
-                }
-            }
-        }
+        const path = `reports${isNotUser ? '' : '/' + user.uid}`
+        const resSnapshot = await get(child(dbRef, path))
         setSnapshot(resSnapshot)
         setIsLoading(false)
     }
-    const ImagesComponent = ({report}) => {
-        return images[report] ? images[report].length > 0 ?
-                <ImageList sx={{width: '100%', height: 'fit-content'}} cols={1}>
-                    {images[report].map((item, i) => (
-                        <ImageListItem key={i}
-                                       sx={{p: window.innerWidth > 900 ? '.5rem 1rem' : '0 .5rem'}}>
-                            <img src={item} alt={'selected image ' + i} loading="lazy"/>
-                        </ImageListItem>
-                    ))}
-                </ImageList>
-                : <></>
-            : <></>
+
+    const UserContent = ({responseData}) => {
+        return Object.keys(responseData).reverse().map((dateRep, i) => {
+            const reports = Object.keys(responseData[dateRep]).map((report, index) => {
+                const reportObject = responseData[dateRep][report]
+                return <AccordionReport index={index} reportObject={reportObject} snapshot={snapshot} user={user}
+                                        report={report} key={index}/>
+            })
+            return <Accordion key={i} sx={{backgroundColor: blue[50], border: '1px solid' + lightBlue[100]}}>
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon/>}
+                    aria-controls={`panel${i}-content`}
+                    id={`panel${i}-header`}>
+                    <Typography sx={{display: 'flex'}}>
+                        <FolderIcon sx={{marginRight: '1rem'}} color="primary"/>
+                        {dateRep.replaceAll('_', '/')}
+                    </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    {reports}
+                </AccordionDetails>
+            </Accordion>
+        })
     }
+
     const getContent = () => {
         if (snapshot?.exists()) {
             const responseData = snapshot.val()
-            return Object.keys(responseData).reverse().map((dateRep, i) => {
-                const reports = Object.keys(responseData[dateRep]).map((report, index) => {
-                    const reportObject = responseData[dateRep][report]
-                    return <Accordion key={index}
-                                      sx={{backgroundColor: lightBlue[100], border: '1px solid' + lightBlue[200]}}>
-                        <AccordionSummary
-                            expandIcon={<ExpandMoreIcon/>}
-                            aria-controls={`panel${index}-content`}
-                            id={`panel${index}-header`}>
-                            <Typography sx={{display: 'flex'}}>
-                                <FolderIcon sx={{marginRight: '1rem'}} color="primary"/>
-                                {reportObject.timeCreation}
-                            </Typography>
+            if (isNotUser) {
+                return Object.keys(responseData).map((item, index) => {
+                    return <Accordion key={index} sx={{backgroundColor: indigo[50], border: '1px solid' + blue[100]}}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                            <FolderIcon sx={{marginRight: '1rem'}} color="primary"/>
+                            {Object.values(Object.values(responseData[item])[0])[0].owner}
                         </AccordionSummary>
-                        <AccordionDetails sx={{backgroundColor: lightBlue[50]}}>
-                            <Grid container>
-                                <Grid item xs={12} md={7}>
-                                    {images[report] && <MapComponent locations={reportObject.locations}/>}
-                                </Grid>
-                                <Grid item xs={12} md={5}
-                                      sx={{
-                                          p: window.innerWidth > 900 ? '1rem' : '0',
-                                          display: 'flex',
-                                          justifyContent: 'center',
-                                          flexDirection: 'column'
-                                      }}>
-                                    <Typography variant="h6"
-                                                sx={{p: '1rem 0'}}>Organization: {reportObject.organization}</Typography>
-                                    <Typography variant="h6" sx={{p: '1rem 0'}}>Object of
-                                        work: {reportObject.workObject}</Typography>
-                                    <Typography variant="h6" sx={{p: '1rem 0'}}>Type of
-                                        work: {reportObject.workType}</Typography>
-                                    <ImagesComponent report={report}/>
-                                </Grid>
-                            </Grid>
+                        <AccordionDetails>
+                            <UserContent responseData={responseData[item]}/>
                         </AccordionDetails>
                     </Accordion>
                 })
-                return <Accordion key={i} sx={{backgroundColor: blue[50], border: '1px solid' + lightBlue[100]}}>
-                    <AccordionSummary
-                        expandIcon={<ExpandMoreIcon/>}
-                        aria-controls={`panel${i}-content`}
-                        id={`panel${i}-header`}>
-                        <Typography sx={{display: 'flex'}}>
-                            <FolderIcon sx={{marginRight: '1rem'}} color="primary"/>
-                            {dateRep.replaceAll('_', '/')}
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {reports}
-                    </AccordionDetails>
-                </Accordion>
-            })
+            } else {
+                return <UserContent responseData={responseData}/>
+            }
         } else {
-            return <h3>No data available</h3>
+            return <h3>{translation('NO_REPORT_AVAILABLE', language)}</h3>
         }
     }
 
@@ -163,9 +90,10 @@ export const YourReports = ({user}) => {
 
     return <>
         <Box sx={{display: 'flex', padding: '1rem'}} justifyContent="space-between" alignItems="center">
-            <Typography variant="h4" component="h1">Your reports</Typography>
+            <Typography variant="h4"
+                        component="h1">{translation(isNotUser ? 'ALL_REPORTS' : 'YOUR_REPORTS', language)}</Typography>
             <Button onClick={getDataFirebase} variant="contained" endIcon={<ReplayIcon/>} disabled={isLoading}>
-                Reload
+                {translation('RELOAD', language)}
             </Button>
         </Box>
         {isLoading
