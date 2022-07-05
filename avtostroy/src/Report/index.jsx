@@ -107,10 +107,11 @@ export const Report = ({user}) => {
         setWorkType('')
         setImages([])
         setLocations([])
+        setWorkVolume('')
         setOrganizationTouched(false)
         setWorkObjectTouched(false)
         setWorkTypeTouched(false)
-        setWorkVolume(false)
+        setWorkVolumeTouched(false)
     }
 
     const closeMessage = () => {
