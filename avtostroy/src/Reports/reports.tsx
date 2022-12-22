@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import {child, get, getDatabase, ref} from 'firebase/database'
-import {appCheck} from '../firebaseHelper'
+import {appCheck} from '../utils/firebaseHelper'
 import {
     Accordion,
     AccordionDetails,
@@ -14,35 +14,40 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import {lightBlue, blue, indigo} from '@mui/material/colors'
 import FolderIcon from '@mui/icons-material/Folder'
 import ReplayIcon from '@mui/icons-material/Replay'
-import {translation} from '../localization'
-import {useSelector} from 'react-redux'
-import {AccordionReport} from './AccordionReport'
+import {AccordionReport} from './accordionReport'
 import hash from 'object-hash'
-import {HashArray} from '../hashes'
+import {HashArray} from '../utils/hashes'
+import {useTranslation} from 'react-i18next'
+import firebase from 'firebase/compat'
+import {getErrorMessage} from '../utils/utils'
+import {setMessage} from '../redux/slices/messageSlice'
+import {useDispatch} from 'react-redux'
 
-export const YourReports = ({user}) => {
+const Reports = ({user}: { user: firebase.User }) => {
     const [isLoading, setIsLoading] = useState(false)
-    const [snapshot, setSnapshot] = useState()
-    const {language} = useSelector(state => state.language)
+    const [snapshot, setSnapshot] = useState({} as firebase.database.DataSnapshot)
+    const dispatch = useDispatch()
     const isNotUser = HashArray.includes(hash(user.uid))
-
+    const {t} = useTranslation()
     const getDataFirebase = async () => {
         setIsLoading(true)
-        const dbRef = ref(getDatabase())
-        await appCheck()
-        const path = `reports${isNotUser ? '' : '/' + user.uid}`
-        const resSnapshot = await get(child(dbRef, path))
-        setSnapshot(resSnapshot)
-        setIsLoading(false)
+        try {
+            const dbRef = ref(getDatabase())
+            await appCheck()
+            const path = `reports${isNotUser ? '' : '/' + user.uid}`
+            const resSnapshot = await get(child(dbRef, path))
+            // @ts-ignore
+            setSnapshot(resSnapshot)
+        } catch (error) {
+            const errorMessage = getErrorMessage(error)
+            dispatch(setMessage({text: errorMessage, type: 'error'}))
+        } finally {
+            setIsLoading(false)
+        }
     }
 
-    const UserContent = ({responseData}) => {
-        return Object.keys(responseData).reverse().map((dateRep, i) => {
-            const reports = Object.keys(responseData[dateRep]).map((report, index) => {
-                const reportObject = responseData[dateRep][report]
-                return <AccordionReport index={index} reportObject={reportObject} snapshot={snapshot} user={user}
-                                        report={report} key={index}/>
-            })
+    const userContent = (responseData: any) => {
+        return Object.keys(responseData).map((dateRep, i) => {
             return <Accordion key={i} sx={{backgroundColor: blue[50], border: '1px solid' + lightBlue[100]}}>
                 <AccordionSummary
                     expandIcon={<ExpandMoreIcon/>}
@@ -54,32 +59,46 @@ export const YourReports = ({user}) => {
                     </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    {reports}
+                    {Object.keys(responseData[dateRep]).map((report, index) => {
+                        const reportObject = responseData[dateRep][report]
+                        return <AccordionReport index={index} reportObject={reportObject} user={user}
+                                                report={report} key={index} dateRep={dateRep}/>
+                    })}
                 </AccordionDetails>
             </Accordion>
         })
     }
 
     const getContent = () => {
-        if (snapshot?.exists()) {
+        if (snapshot.exists && snapshot.exists()) {
             const responseData = snapshot.val()
-            if (isNotUser) {
+            const getOwnerName = (item: string) => {
+                const userReports: object = responseData[item]
+                if (userReports) {
+                    const userDateReport = userReports[Object.keys(userReports)[0] as keyof typeof userReports]
+                    if (userDateReport) {
+                        const userReport: { owner: string } = userDateReport[Object.keys(userDateReport)[0] as keyof typeof userDateReport]
+                        return userReport?.owner
+                    }
+                }
+            }
+            if (isNotUser && responseData) {
                 return Object.keys(responseData).map((item, index) => {
                     return <Accordion key={index} sx={{backgroundColor: indigo[50], border: '1px solid' + blue[100]}}>
                         <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
                             <FolderIcon sx={{marginRight: '1rem'}} color="primary"/>
-                            {Object.values(Object.values(responseData[item])[0])[0].owner}
+                            {getOwnerName(item)}
                         </AccordionSummary>
                         <AccordionDetails>
-                            <UserContent responseData={responseData[item]}/>
+                            {userContent(responseData[item])}
                         </AccordionDetails>
                     </Accordion>
                 })
             } else {
-                return <UserContent responseData={responseData}/>
+                return userContent(responseData)
             }
         } else {
-            return <h3>{translation('NO_REPORT_AVAILABLE', language)}</h3>
+            return <h3>{t('NO_REPORT_AVAILABLE')}</h3>
         }
     }
 
@@ -91,9 +110,9 @@ export const YourReports = ({user}) => {
     return <>
         <Box sx={{display: 'flex', padding: '1rem'}} justifyContent="space-between" alignItems="center">
             <Typography variant="h4"
-                        component="h1">{translation(isNotUser ? 'ALL_REPORTS' : 'YOUR_REPORTS', language)}</Typography>
+                        component="h1">{t(isNotUser ? 'ALL_REPORTS' : 'YOUR_REPORTS')}</Typography>
             <Button onClick={getDataFirebase} variant="contained" endIcon={<ReplayIcon/>} disabled={isLoading}>
-                {translation('RELOAD', language)}
+                {t('RELOAD')}
             </Button>
         </Box>
         {isLoading
@@ -107,3 +126,5 @@ export const YourReports = ({user}) => {
         }
     </>
 }
+
+export default React.memo(Reports)

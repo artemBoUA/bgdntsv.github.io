@@ -1,6 +1,6 @@
 {
   "REPORT": "Звітувати",
-  "YOUR_REPORTS": "Ваші звіти",
+  "YOUR_REPORTS": "Звіти",
   "LOGOUT": "Вийти",
   "OPEN_SETTINGS": "Відкрити налаштування",
   "PLEASE_LOGIN": "Ввійдіть у систему",
@@ -28,5 +28,8 @@
   "ADD_LOCATION_OF_WORK": "Додати місце роботи на карті",
   "ADD_PHOTO_OF_WORK": "Додати фото робіт на об'єкті",
   "ADD_DETAILS_OF_WORK": "Додати деталі виконаних робіт",
-  "ALL_POINTS_ARE_REQUIRED": "Всі пункти для відправки звіту є обов'язкові, окрім фото"
+  "ALL_POINTS_ARE_REQUIRED": "Всі пункти для відправки звіту є обов'язкові, окрім фото",
+  "ENTER_A_VALID_EMAIL": "Введіть дійсний email",
+  "REQUIRED_FIELD": "Обовязкове поле",
+  "PASSWORD_SHOULD_BE": "Пароль має складати мінімум 8 символів"
 }

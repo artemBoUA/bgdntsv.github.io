@@ -1,13 +1,11 @@
-import React, {useEffect, useState} from 'react'
+import React, {useState} from 'react'
 import styles from './login.module.css'
 import {initializeApp} from 'firebase/app'
 import {getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup} from 'firebase/auth'
-import {replace, useFormik} from 'formik'
+import {useFormik} from 'formik'
 import * as yup from 'yup'
 import {
-    Alert, Box,
     Button,
-    Collapse,
     FormControl,
     IconButton,
     Input,
@@ -16,42 +14,30 @@ import {
     TextField, Typography
 } from '@mui/material'
 import {Visibility, VisibilityOff, Google} from '@mui/icons-material'
-import {useDispatch, useSelector} from 'react-redux'
-import {bindActionCreators} from 'redux'
-import {actionCreators} from '../redux/actionCreators.js'
-import {useNavigate} from 'react-router-dom'
-import {firebaseConfig} from '../firebaseHelper'
-import CloseIcon from '@mui/icons-material/Close'
-import {translation} from '../localization'
-import {appCheck} from '../firebaseHelper'
+import {useDispatch} from 'react-redux'
+import {firebaseConfig, appCheck} from '../utils/firebaseHelper'
+import {setUser} from '../redux/slices/userSlice'
+import {setMessage} from '../redux/slices/messageSlice'
+import {getErrorMessage} from '../utils/utils'
+import {useTranslation} from 'react-i18next'
+
 const Login = () => {
-    const navigate = useNavigate()
-    const {user} = useSelector(state => state.user)
-    const {language} = useSelector(state => state.language)
     const dispatch = useDispatch()
-    const {setUserActionCreator} = bindActionCreators(actionCreators, dispatch)
     const [showPassword, setShowPassword] = useState(false)
-    const [error, setError] = useState('')
-
-    useEffect(() => {
-        if (user) {
-            navigate('/', replace)
-        }
-    }, [user, navigate])
-
     const firebaseApp = initializeApp(firebaseConfig)
     const auth = getAuth(firebaseApp)
     const provider = new GoogleAuthProvider()
+    const {t} = useTranslation()
 
     const validationSchema = yup.object({
         email: yup
-            .string('Enter your email')
-            .email('Enter a valid email')
-            .required('Email is required'),
+            .string()
+            .email(t('ENTER_A_VALID_EMAIL') as string)
+            .required(t('REQUIRED_FIELD') as string),
         password: yup
-            .string('Enter your password')
-            .min(8, 'Password should be of minimum 8 characters length')
-            .required('Password is required')
+            .string()
+            .min(8, t('PASSWORD_SHOULD_BE') as string)
+            .required(t('REQUIRED_FIELD') as string)
     })
 
     const formik = useFormik({
@@ -65,57 +51,37 @@ const Login = () => {
             try {
                 appCheck()
                 userCredentials = await signInWithEmailAndPassword(auth, values.email, values.password)
-                setUserActionCreator(userCredentials.user)
+                dispatch(setUser(userCredentials.user))
             } catch (error) {
-                showError(error.message)
+                const errorMessage = getErrorMessage(error)
+                showError(errorMessage)
             } finally {
                 setSubmitting(false)
             }
         }
     })
 
-    const signInGoogle = () => {
-        appCheck()
-        signInWithPopup(auth, provider)
-            .then((result) => {
-                setUserActionCreator(result.user)
-            }).catch((error) => {
-            showError(error.message)
-        })
+    const signInGoogle = async () => {
+        try {
+            appCheck()
+            const result = await signInWithPopup(auth, provider)
+            dispatch(setUser(result.user))
+        } catch (error) {
+            showError(getErrorMessage(error))
+        }
     }
 
-    const showError = (error) => {
-        setError(error)
-        setTimeout(() => {
-            setError('')
-        }, 3000)
+    const showError = (error: string) => {
+        dispatch(setMessage({text: error, type: 'error'}))
     }
 
-    const handleShowPassword = (e) => {
+    const handleShowPassword = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
         setShowPassword(prev => !prev)
     }
 
     return <div className={styles.page}>
-        <Box sx={{width: '100%'}}>
-            <Collapse in={!!error}>
-                <Alert
-                    severity={'error'}
-                    action={
-                        <IconButton
-                            aria-label="close"
-                            color="inherit"
-                            size="small"
-                            onClick={() => setError('')}>
-                            <CloseIcon fontSize="inherit"/>
-                        </IconButton>
-                    }
-                    sx={{mb: 2}}>
-                    {error}
-                </Alert>
-            </Collapse>
-        </Box>
-        <Typography variant="h4" component="h1">{translation('PLEASE_LOGIN', language)}!</Typography>
+        <Typography variant="h4" component="h1">{t('PLEASE_LOGIN')}!</Typography>
         <form onSubmit={formik.handleSubmit} className={styles.form}>
             <FormControl sx={{m: 1, width: '30ch'}} variant="standard">
                 <TextField
@@ -131,7 +97,7 @@ const Login = () => {
                 />
             </FormControl>
             <FormControl sx={{m: 1, width: '30ch'}} variant="standard">
-                <InputLabel htmlFor="standard-adornment-password">{translation('PASSWORD', language)}</InputLabel>
+                <InputLabel htmlFor="standard-adornment-password">{t('PASSWORD')}</InputLabel>
                 <Input
                     id="standard-adornment-password"
                     name="password"
@@ -153,9 +119,9 @@ const Login = () => {
                 />
             </FormControl>
             <div className={styles.buttons}>
-                <Button color="primary" variant="contained" type="submit">{translation('SUBMIT', language)}</Button>
+                <Button color="primary" variant="contained" type="submit">{t('SUBMIT')}</Button>
                 <Button onClick={signInGoogle} startIcon={<Google
-                    sx={{height: '25px'}}/>}>{translation('SIGN_IN_WITH_GOOGLE', language)}</Button>
+                    sx={{height: '25px'}}/>}>{t('SIGN_IN_WITH_GOOGLE')}</Button>
             </div>
         </form>
     </div>

@@ -1,5 +1,4 @@
-// eslint-disable-next-line import/no-anonymous-default-export
-export default [
+const style = [
     {
         "featureType": "all",
         "elementType": "labels.text.fill",
@@ -265,3 +264,4 @@ export default [
         ]
     }
 ]
+export default style

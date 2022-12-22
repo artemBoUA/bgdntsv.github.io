@@ -1,27 +1,27 @@
 import React from 'react'
-import Lottie from 'react-lottie'
+import Lottie from 'lottie-react'
 import * as animation from './errorAnimation.json'
 import {Button, Grid, Typography} from '@mui/material'
 import styles from './404.module.css'
 import {useNavigate} from 'react-router-dom'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import {translation} from '../localization'
-import {useSelector} from 'react-redux'
+import {useTranslation} from 'react-i18next'
 
-export const ErrorPage = () => {
+const ErrorPage = () => {
     const navigate = useNavigate()
-    const {language} = useSelector(state => state.language)
+    const {t} = useTranslation()
     return <Grid container spacing={2} className={styles.page}>
         <Grid item xs={12} md={6}>
             <Typography variant="h3" component="h1" className={styles.title}>Page not found <br/> <b>Error
                 404</b>
-                <Button sx={{marginTop:'1.5rem'}} color="primary" variant="contained" endIcon={<ArrowBackIcon/>}
-                        onClick={() => navigate(-1)}>{translation('COME_BACK_TO_PREVIOUS_PAGE', language)}</Button>
+                <Button sx={{marginTop: '1.5rem'}} color="primary" variant="contained" endIcon={<ArrowBackIcon/>}
+                        onClick={() => navigate(-1)}>{t('COME_BACK_TO_PREVIOUS_PAGE')}</Button>
             </Typography>
 
         </Grid>
         <Grid item xs={12} md={6}>
-            <Lottie options={{loop: true, autoplay: true, animationData: animation}}/>
+            <Lottie loop={true} animationData={animation} autoplay={true}/>
         </Grid>
     </Grid>
 }
+export default React.memo(ErrorPage)

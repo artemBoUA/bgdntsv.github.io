@@ -12,38 +12,46 @@ import {
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import FolderIcon from '@mui/icons-material/Folder'
-import {translation} from '../localization'
 import {GoogleMap, Marker} from '@react-google-maps/api'
 import mapStyles from '../googleMaps/mapsStyles'
-import {useSelector} from 'react-redux'
 import * as firebaseStorage from 'firebase/storage'
+import {useTranslation} from 'react-i18next'
 
-export const AccordionReport = ({index, reportObject, snapshot, user, report}) => {
+type accordionReportPropTypes = {
+    index: number
+    reportObject: {
+        organization: string
+        workObject: string
+        workType: string
+        workVolume: string
+        locations: Array<google.maps.LatLngLiteral>
+        timeCreation: string
+    }
+    user: {
+        uid: number | string
+    }
+    report: string
+    dateRep: string
+}
+export const AccordionReport = ({index, reportObject, user, report, dateRep}: accordionReportPropTypes) => {
+    type imagesType = {
+        [report: string]: Array<string>
+    }
     const [isOpened, setIsOpened] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [images, setImages] = useState({})
+    const [images, setImages] = useState<imagesType>({})
     const [imagesSearched, setImagesSearched] = useState(false)
-    const {language} = useSelector(state => state.language)
+    const {t} = useTranslation()
+    const mapRef = useRef<google.maps.Map>()
 
     useEffect(() => {
         if (isOpened && !imagesSearched) {
             setIsLoading(true)
-            if (snapshot?.exists()) {
-                const responseData = snapshot.val()
-                for (const key in responseData) {
-                    for (const keyKey in responseData[key]) {
-                        getImageURLs(key, keyKey).then(() => {
-                            setImagesSearched(true)
-                            setIsLoading(false)
-                        })
-                    }
-                }
-            }
+            getImageURLs().then(() => setIsLoading(false))
         }
         // eslint-disable-next-line
-    }, [isOpened, snapshot])
+    }, [isOpened])
 
-    const mapRef = useRef()
     const options = {
         disableDefaultUI: true,
         styles: mapStyles,
@@ -51,16 +59,15 @@ export const AccordionReport = ({index, reportObject, snapshot, user, report}) =
         fullscreenControl: true
     }
     const onMapLoad = useCallback(
-        (map) => {
+        (map: google.maps.Map) => {
             mapRef.current = map
         },
         []
     )
 
-    const getImageURLs = async (dateRep, report) => {
-        let imageURLs = []
-        const reportInt = parseInt(report)
-        if (!images[reportInt]) {
+    const getImageURLs = async () => {
+        let imageURLs: Array<string> = []
+        if (!images[report]) {
             const storage = firebaseStorage.getStorage()
             const imageListRef = firebaseStorage.ref(storage, `images/${user.uid}/${dateRep}/${report}`)
             const res = await firebaseStorage.listAll(imageListRef)
@@ -69,12 +76,13 @@ export const AccordionReport = ({index, reportObject, snapshot, user, report}) =
                 imageURLs = [...imageURLs, url]
             }
             setImages(prev => {
-                return {...prev, [reportInt]: imageURLs}
+                return {...prev, [report]: imageURLs}
             })
         }
+        setImagesSearched(true)
     }
 
-    const MapComponent = ({locations}) => {
+    const MapComponent = useCallback(({locations}: { locations: Array<google.maps.LatLngLiteral> }) => {
         return <GoogleMap mapContainerStyle={{width: '100%', minHeight: '100%', height: '400px'}}
                           zoom={14}
                           options={options}
@@ -84,18 +92,19 @@ export const AccordionReport = ({index, reportObject, snapshot, user, report}) =
                                                   position={{lat: marker.lat, lng: marker.lng}}
                                                   icon={{
                                                       url: '/markerImg.svg',
-                                                      scaledSize: new window.google.maps.Size(25, 25),
-                                                      origin: new window.google.maps.Point(0, 0),
-                                                      anchor: new window.google.maps.Point(15, 15)
+                                                      scaledSize: new google.maps.Size(25, 25),
+                                                      origin: new google.maps.Point(0, 0),
+                                                      anchor: new google.maps.Point(15, 15)
                                                   }}
             />)}
         </GoogleMap>
-    }
+        //eslint-disable-next-line
+    }, [])
 
-    const ImagesComponent = ({report}) => {
+    const ImagesComponent = ({report}: { report: keyof typeof images }) => {
         return images[report] ? images[report].length > 0 ?
                 <ImageList sx={{width: '100%', height: 'fit-content'}} cols={window.innerWidth < 900 ? 1 : 3}>
-                    {images[report].map((item, i) => (
+                    {images[report].map((item: string, i: number) => (
                         <ImageListItem key={i}
                                        sx={{p: window.innerWidth > 900 ? '.5rem 1rem' : '0 .5rem'}}>
                             <img src={item} alt={'selected image ' + i} loading="lazy"/>
@@ -135,22 +144,21 @@ export const AccordionReport = ({index, reportObject, snapshot, user, report}) =
                                   flexDirection: 'column'
                               }}>
                             <Typography variant="h6" sx={{p: '1rem 0'}}>
-                                <b>{translation('ORGANIZATION', language)}</b>: {reportObject.organization || translation('NO_DATA', language)}
+                                <b>{t('ORGANIZATION')}</b>: {reportObject.organization || t('NO_DATA')}
                             </Typography>
                             <Typography variant="h6" sx={{p: '1rem 0'}}>
-                                <b>{translation('OBJECT_OF_WORK', language)}</b>: {reportObject.workObject || translation('NO_DATA', language)}
+                                <b>{t('OBJECT_OF_WORK')}</b>: {reportObject.workObject || t('NO_DATA')}
                             </Typography>
                             <Typography variant="h6" sx={{p: '1rem 0'}}>
-                                <b>{translation('TYPE_OF_WORK', language)}</b>: {reportObject.workType || translation('NO_DATA', language)}
+                                <b>{t('TYPE_OF_WORK')}</b>: {reportObject.workType || t('NO_DATA')}
                             </Typography>
                             <Typography variant="h6" sx={{p: '1rem 0'}}>
-                                <b>{translation('VOLUME_OF_WORK', language)}</b>: {reportObject.workVolume || translation('NO_DATA', language)}
+                                <b>{t('VOLUME_OF_WORK')}</b>: {reportObject.workVolume || t('NO_DATA')}
                             </Typography>
                         </Grid>
                     </Grid>
                     <ImagesComponent report={report}/>
                 </>}
-
         </AccordionDetails>
     </Accordion>
 }
