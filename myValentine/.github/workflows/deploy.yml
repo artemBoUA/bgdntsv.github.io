@@ -1,8 +1,8 @@
-name: Deploy to GitHub Pages
+name: Deploy myValentine to Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "master" ] # Оскільки на скрині у тебе гілка master
 
 permissions:
   contents: read
@@ -10,23 +10,37 @@ permissions:
   id-token: write
 
 jobs:
-  build_site:
+  build_and_deploy:
     runs-on: ubuntu-latest
+
+    # Встановлюємо робочу директорію для всіх кроків
+    defaults:
+      run:
+        working-directory: ./myValentine
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install Node.js
+
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
+          cache-dependency-path: './myValentine/package-lock.json'
+
       - name: Install dependencies
         run: npm install
+
       - name: Build
         run: npm run build
-      - name: Upload Artifacts
+
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
-      - name: Deploy
+          # Вказуємо шлях до папки dist відносно КОРЕНЯ репозиторію
+          path: ./myValentine/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
