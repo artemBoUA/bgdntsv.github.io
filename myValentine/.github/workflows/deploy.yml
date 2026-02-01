@@ -3,6 +3,7 @@ name: Deploy myValentine to Pages
 on:
   push:
     branches: [ "master" ] # Оскільки на скрині у тебе гілка master
+  workflow_dispatch: # Дозволяє запуск вручну через інтерфейс GitHub
 
 permissions:
   contents: read
