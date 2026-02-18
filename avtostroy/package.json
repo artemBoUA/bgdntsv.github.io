@@ -13,7 +13,7 @@
     "axios": "^1.12.0",
     "compressorjs": "^1.1.1",
     "firebase": "^12.8.0",
-    "firebase-tools": "^11.30.0",
+    "firebase-tools": "^15.6.0",
     "firebaseui": "^6.1.0",
     "formik": "^2.2.9",
     "lottie-react": "^2.3.1",
